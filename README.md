@@ -9,7 +9,7 @@
 [license-url]: https://github.com/ivanovart/libqtum/blob/master/LICENSE
 [pypi-image]: https://img.shields.io/pypi/v/libqtum?style=flat-square
 [pypi-url]: https://pypi.org/project/libqtum/
-[build-image]: https://img.shields.io/travis/ivanovart/libqtum?style=flat-square
+[build-image]: https://img.shields.io/travis/com/ivanovart/libqtum?style=flat-square
 [build-url]: https://travis-ci.com/ivanovart/libqtum
 [coverage-image]: https://img.shields.io/coveralls/github/ivanovart/libqtum?style=flat-square
 [coverage-url]: https://coveralls.io/github/ivanovart/libqtum?branch=master
