@@ -7,7 +7,7 @@ module = "libqtum"
 author = "Artem Ivanov"
 author-email = "libqtum@ivart.xyz"
 home-page = "https://github.com/ivanovart/libqtum"
-requires=[
+requires = [
     "pycryptodome==3.9.8",
     "ecdsa==0.15",
     "eth-utils==1.9.0",
@@ -21,4 +21,7 @@ classifiers = [
 description-file = "README.md"
 requires-python = ">=3.7"
 
-
+[tool.flit.metadata.requires-extra]
+test = [
+    "tox"
+]

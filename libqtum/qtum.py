@@ -5,7 +5,6 @@ from .tx import UTXO
 
 
 class Qtum(metaclass=ABCMeta):
-
     @abstractmethod
     def get_address_utxo(self, address: str) -> List[UTXO]:
         raise NotImplemented()

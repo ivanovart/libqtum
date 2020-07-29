@@ -5,6 +5,7 @@ from .utils import var_int
 
 class ScriptInvalidError(Exception):
     """Base class for Script exceptions"""
+
     pass
 
 
@@ -24,6 +25,7 @@ class Script(bytes):
     general case would not require creating a lot of little OpCode objects.
     iter(script) however does iterate by opcode.
     """
+
     __slots__ = ()
 
     @classmethod
@@ -51,23 +53,24 @@ class Script(bytes):
             # bytes.__add__ always returns bytes instances unfortunately
             return Script(super(Script, self).__add__(other))
         except TypeError:
-            raise TypeError('Can not add a %r instance to a Script' % other.__class__)
+            raise TypeError("Can not add a %r instance to a Script" % other.__class__)
 
     def join(self, iterable):
         # join makes no sense for a Script()
         raise NotImplementedError
 
-    def __new__(cls, value=b''):
+    def __new__(cls, value=b""):
         if isinstance(value, bytes) or isinstance(value, bytearray):
             return super(Script, cls).__new__(cls, value)
         else:
+
             def coerce_iterable(iterable):
                 for instance in iterable:
                     yield cls.__coerce_instance(instance)
 
             # Annoyingly on both python2 and python3 bytes.join() always
             # returns a bytes instance even when subclassed.
-            return super(Script, cls).__new__(cls, b''.join(coerce_iterable(value)))
+            return super(Script, cls).__new__(cls, b"".join(coerce_iterable(value)))
 
     def raw_iter(self):
         """Raw iteration
@@ -85,37 +88,44 @@ class Script(bytes):
                 yield opcode, None, sop_idx
             else:
                 if opcode < OpCode.OP_PUSHDATA1:
-                    pushdata_type = 'PUSHDATA(%d)' % opcode
+                    pushdata_type = "PUSHDATA(%d)" % opcode
                     data_size = opcode
 
                 elif opcode == OpCode.OP_PUSHDATA1:
-                    pushdata_type = 'PUSHDATA1'
+                    pushdata_type = "PUSHDATA1"
                     if i >= len(self):
-                        raise ScriptInvalidError('PUSHDATA1: missing data length')
+                        raise ScriptInvalidError("PUSHDATA1: missing data length")
                     data_size = self[i]
                     i += 1
 
                 elif opcode == OpCode.OP_PUSHDATA2:
-                    pushdata_type = 'PUSHDATA2'
+                    pushdata_type = "PUSHDATA2"
                     if i + 1 >= len(self):
-                        raise ScriptInvalidError('PUSHDATA2: missing data length')
+                        raise ScriptInvalidError("PUSHDATA2: missing data length")
                     data_size = self[i] + (self[i + 1] << 8)
                     i += 2
 
                 elif opcode == OpCode.OP_PUSHDATA4:
-                    pushdata_type = 'PUSHDATA4'
+                    pushdata_type = "PUSHDATA4"
                     if i + 3 >= len(self):
-                        raise ScriptInvalidError('PUSHDATA4: missing data length')
-                    data_size = self[i] + (self[i + 1] << 8) + (self[i + 2] << 16) + (self[i + 3] << 24)
+                        raise ScriptInvalidError("PUSHDATA4: missing data length")
+                    data_size = (
+                        self[i]
+                        + (self[i + 1] << 8)
+                        + (self[i + 2] << 16)
+                        + (self[i + 3] << 24)
+                    )
                     i += 4
                 else:
                     assert False  # shouldn't happen
 
-                data = bytes(self[i:i + data_size])
+                data = bytes(self[i : i + data_size])
 
                 # Check for truncation
                 if len(data) < data_size:
-                    raise ScriptTruncatedPushDataError('%s: truncated data' % pushdata_type, data)
+                    raise ScriptTruncatedPushDataError(
+                        "%s: truncated data" % pushdata_type, data
+                    )
 
                 i += data_size
 
@@ -153,10 +163,10 @@ class Script(bytes):
             try:
                 op = _repr(next(i))
             except ScriptTruncatedPushDataError as err:
-                op = '%s...<ERROR: %s>' % (_repr(err.data), err)
+                op = "%s...<ERROR: %s>" % (_repr(err.data), err)
                 break
             except ScriptInvalidError as err:
-                op = '<ERROR: %s>' % err
+                op = "<ERROR: %s>" % err
                 break
             except StopIteration:
                 break
@@ -164,7 +174,7 @@ class Script(bytes):
                 if op is not None:
                     ops.append(op)
 
-        return "Script([%s])" % ', '.join(ops)
+        return "Script([%s])" % ", ".join(ops)
 
     def get_sig_op_count(self, f_accurate):
         """Get the SigOp count.
@@ -189,27 +199,35 @@ class Script(bytes):
 
     @staticmethod
     def num(n: int):
-        assert -0x7fff_ffff <= n <= 0x7fff_ffff
+        assert -0x7FFF_FFFF <= n <= 0x7FFF_FFFF
         if n == 0:
-            return b'\x00'
+            return b"\x00"
 
         result = bytes()
         abs_n = abs(n)
         while abs_n:
-            result += (abs_n & 0xff).to_bytes(1, 'big')
+            result += (abs_n & 0xFF).to_bytes(1, "big")
             abs_n >>= 8
 
         if result[-1] & 0x80:
-            result += b'\x80' if n < 0 else b'\x00'
+            result += b"\x80" if n < 0 else b"\x00"
         elif n < 0:
-            result = result[:-1] + (result[-1] | 0x80).to_bytes(1, 'big')
+            result = result[:-1] + (result[-1] | 0x80).to_bytes(1, "big")
 
         return result
 
     @classmethod
     def p2pkh(cls, address: bytes):
         assert len(address) == 20
-        return cls([OpCode.OP_DUP, OpCode.OP_HASH160, address, OpCode.OP_EQUALVERIFY, OpCode.OP_CHECKSIG])
+        return cls(
+            [
+                OpCode.OP_DUP,
+                OpCode.OP_HASH160,
+                address,
+                OpCode.OP_EQUALVERIFY,
+                OpCode.OP_CHECKSIG,
+            ]
+        )
 
 
-__all__ = ['Script', 'ScriptInvalidError', 'ScriptTruncatedPushDataError']
+__all__ = ["Script", "ScriptInvalidError", "ScriptTruncatedPushDataError"]

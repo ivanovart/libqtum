@@ -10,14 +10,15 @@ class OpCodeBase(int, Enum):
     def encode_op_pushdata(d):
         """Encode a PUSHDATA op, returning bytes"""
         import struct
-        if len(d) < 0x4c:
-            return b'' + bytes([len(d)]) + d  # OP_PUSHDATA
-        elif len(d) <= 0xff:
-            return b'\x4c' + bytes([len(d)]) + d  # OP_PUSHDATA1
-        elif len(d) <= 0xffff:
-            return b'\x4d' + struct.pack(b'<H', len(d)) + d  # OP_PUSHDATA2
-        elif len(d) <= 0xffffffff:
-            return b'\x4e' + struct.pack(b'<I', len(d)) + d  # OP_PUSHDATA4
+
+        if len(d) < 0x4C:
+            return b"" + bytes([len(d)]) + d  # OP_PUSHDATA
+        elif len(d) <= 0xFF:
+            return b"\x4c" + bytes([len(d)]) + d  # OP_PUSHDATA1
+        elif len(d) <= 0xFFFF:
+            return b"\x4d" + struct.pack(b"<H", len(d)) + d  # OP_PUSHDATA2
+        elif len(d) <= 0xFFFFFFFF:
+            return b"\x4e" + struct.pack(b"<I", len(d)) + d  # OP_PUSHDATA4
         else:
             raise ValueError("Data too long to encode in a PUSHDATA op")
 
@@ -25,7 +26,7 @@ class OpCodeBase(int, Enum):
     def encode_op_n(cls, n):
         """Encode a small integer op, returning an opcode"""
         if not (0 <= n <= 16):
-            raise ValueError('Integer must be in range 0 <= n <= 16, got %d' % n)
+            raise ValueError("Integer must be in range 0 <= n <= 16, got %d" % n)
 
         return cls(n)
 
@@ -35,7 +36,7 @@ class OpCodeBase(int, Enum):
             return 0
 
         if not (self == self.OP_0 or self.OP_1 <= self <= self.OP_16):
-            raise ValueError('op %r is not an OP_N' % self)
+            raise ValueError("op %r is not an OP_N" % self)
 
         return int(self - self.OP_1 + 1)
 
@@ -44,18 +45,18 @@ class OpCodeBase(int, Enum):
         return 0x51 <= self <= 0x60 or self == 0
 
     def __repr__(self):
-        return f'<{self.__class__.__name__}.{self._name_}: {hex(self._value_)}>'
+        return f"<{self.__class__.__name__}.{self._name_}: {hex(self._value_)}>"
 
 
-@FillEnum(range(1, 0x4c), OpCodeBase, prefix='OP_PUSHN_', module=__name__)
+@FillEnum(range(1, 0x4C), OpCodeBase, prefix="OP_PUSHN_", module=__name__)
 class OpCode(OpCodeBase):
     # push value
     OP_0 = 0x00
     OP_FALSE = OP_0
-    OP_PUSHDATA1 = 0x4c
-    OP_PUSHDATA2 = 0x4d
-    OP_PUSHDATA4 = 0x4e
-    OP_1NEGATE = 0x4f
+    OP_PUSHDATA1 = 0x4C
+    OP_PUSHDATA2 = 0x4D
+    OP_PUSHDATA4 = 0x4E
+    OP_1NEGATE = 0x4F
     OP_RESERVED = 0x50
     OP_1 = 0x51
     OP_TRUE = OP_1
@@ -67,12 +68,12 @@ class OpCode(OpCodeBase):
     OP_7 = 0x57
     OP_8 = 0x58
     OP_9 = 0x59
-    OP_10 = 0x5a
-    OP_11 = 0x5b
-    OP_12 = 0x5c
-    OP_13 = 0x5d
-    OP_14 = 0x5e
-    OP_15 = 0x5f
+    OP_10 = 0x5A
+    OP_11 = 0x5B
+    OP_12 = 0x5C
+    OP_13 = 0x5D
+    OP_14 = 0x5E
+    OP_15 = 0x5F
     OP_16 = 0x60
 
     # control
@@ -85,14 +86,14 @@ class OpCode(OpCodeBase):
     OP_ELSE = 0x67
     OP_ENDIF = 0x68
     OP_VERIFY = 0x69
-    OP_RETURN = 0x6a
+    OP_RETURN = 0x6A
 
     # stack ops
-    OP_TOALTSTACK = 0x6b
-    OP_FROMALTSTACK = 0x6c
-    OP_2DROP = 0x6d
-    OP_2DUP = 0x6e
-    OP_3DUP = 0x6f
+    OP_TOALTSTACK = 0x6B
+    OP_FROMALTSTACK = 0x6C
+    OP_2DROP = 0x6D
+    OP_2DUP = 0x6E
+    OP_3DUP = 0x6F
     OP_2OVER = 0x70
     OP_2ROT = 0x71
     OP_2SWAP = 0x72
@@ -103,14 +104,14 @@ class OpCode(OpCodeBase):
     OP_NIP = 0x77
     OP_OVER = 0x78
     OP_PICK = 0x79
-    OP_ROLL = 0x7a
-    OP_ROT = 0x7b
-    OP_SWAP = 0x7c
-    OP_TUCK = 0x7d
+    OP_ROLL = 0x7A
+    OP_ROT = 0x7B
+    OP_SWAP = 0x7C
+    OP_TUCK = 0x7D
 
     # splice ops
-    OP_CAT = 0x7e
-    OP_SUBSTR = 0x7f
+    OP_CAT = 0x7E
+    OP_SUBSTR = 0x7F
     OP_LEFT = 0x80
     OP_RIGHT = 0x81
     OP_SIZE = 0x82
@@ -123,14 +124,14 @@ class OpCode(OpCodeBase):
     OP_EQUAL = 0x87
     OP_EQUALVERIFY = 0x88
     OP_RESERVED1 = 0x89
-    OP_RESERVED2 = 0x8a
+    OP_RESERVED2 = 0x8A
 
     # numeric
-    OP_1ADD = 0x8b
-    OP_1SUB = 0x8c
-    OP_2MUL = 0x8d
-    OP_2DIV = 0x8e
-    OP_NEGATE = 0x8f
+    OP_1ADD = 0x8B
+    OP_1SUB = 0x8C
+    OP_2MUL = 0x8D
+    OP_2DIV = 0x8E
+    OP_NEGATE = 0x8F
     OP_ABS = 0x90
     OP_NOT = 0x91
     OP_0NOTEQUAL = 0x92
@@ -143,56 +144,56 @@ class OpCode(OpCodeBase):
     OP_LSHIFT = 0x98
     OP_RSHIFT = 0x99
 
-    OP_BOOLAND = 0x9a
-    OP_BOOLOR = 0x9b
-    OP_NUMEQUAL = 0x9c
-    OP_NUMEQUALVERIFY = 0x9d
-    OP_NUMNOTEQUAL = 0x9e
-    OP_LESSTHAN = 0x9f
-    OP_GREATERTHAN = 0xa0
-    OP_LESSTHANOREQUAL = 0xa1
-    OP_GREATERTHANOREQUAL = 0xa2
-    OP_MIN = 0xa3
-    OP_MAX = 0xa4
+    OP_BOOLAND = 0x9A
+    OP_BOOLOR = 0x9B
+    OP_NUMEQUAL = 0x9C
+    OP_NUMEQUALVERIFY = 0x9D
+    OP_NUMNOTEQUAL = 0x9E
+    OP_LESSTHAN = 0x9F
+    OP_GREATERTHAN = 0xA0
+    OP_LESSTHANOREQUAL = 0xA1
+    OP_GREATERTHANOREQUAL = 0xA2
+    OP_MIN = 0xA3
+    OP_MAX = 0xA4
 
-    OP_WITHIN = 0xa5
+    OP_WITHIN = 0xA5
 
     # crypto
-    OP_RIPEMD160 = 0xa6
-    OP_SHA1 = 0xa7
-    OP_SHA256 = 0xa8
-    OP_HASH160 = 0xa9
-    OP_HASH256 = 0xaa
-    OP_CODESEPARATOR = 0xab
-    OP_CHECKSIG = 0xac
-    OP_CHECKSIGVERIFY = 0xad
-    OP_CHECKMULTISIG = 0xae
-    OP_CHECKMULTISIGVERIFY = 0xaf
+    OP_RIPEMD160 = 0xA6
+    OP_SHA1 = 0xA7
+    OP_SHA256 = 0xA8
+    OP_HASH160 = 0xA9
+    OP_HASH256 = 0xAA
+    OP_CODESEPARATOR = 0xAB
+    OP_CHECKSIG = 0xAC
+    OP_CHECKSIGVERIFY = 0xAD
+    OP_CHECKMULTISIG = 0xAE
+    OP_CHECKMULTISIGVERIFY = 0xAF
 
     # expansion
-    OP_NOP1 = 0xb0
-    OP_CHECKLOCKTIMEVERIFY = 0xb1
-    OP_CHECKSEQUENCEVERIFY = 0xb2
-    OP_NOP4 = 0xb3
-    OP_NOP5 = 0xb4
-    OP_NOP6 = 0xb5
-    OP_NOP7 = 0xb6
-    OP_NOP8 = 0xb7
-    OP_NOP9 = 0xb8
-    OP_NOP10 = 0xb9
+    OP_NOP1 = 0xB0
+    OP_CHECKLOCKTIMEVERIFY = 0xB1
+    OP_CHECKSEQUENCEVERIFY = 0xB2
+    OP_NOP4 = 0xB3
+    OP_NOP5 = 0xB4
+    OP_NOP6 = 0xB5
+    OP_NOP7 = 0xB6
+    OP_NOP8 = 0xB7
+    OP_NOP9 = 0xB8
+    OP_NOP10 = 0xB9
 
-    OP_CREATE = 0xc1
-    OP_CALL = 0xc2
-    OP_SPEND = 0xc3
-    OP_SENDER = 0xc4
+    OP_CREATE = 0xC1
+    OP_CALL = 0xC2
+    OP_SPEND = 0xC3
+    OP_SENDER = 0xC4
 
     # template matching params
-    OP_SMALLINTEGER = 0xfa
-    OP_PUBKEYS = 0xfb
-    OP_PUBKEYHASH = 0xfd
-    OP_PUBKEY = 0xfe
+    OP_SMALLINTEGER = 0xFA
+    OP_PUBKEYS = 0xFB
+    OP_PUBKEYHASH = 0xFD
+    OP_PUBKEY = 0xFE
 
-    OP_INVALIDOPCODE = 0xff
+    OP_INVALIDOPCODE = 0xFF
 
 
-__all__ = ['OpCode']
+__all__ = ["OpCode"]

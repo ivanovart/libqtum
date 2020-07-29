@@ -13,18 +13,18 @@ def hash256(payload: bytes) -> bytes:
 
 def hash160(data: bytes) -> bytes:
     """Return ripemd160(sha256(data))"""
-    rh = hashlib.new('ripemd160', hashlib.sha256(data).digest())
+    rh = hashlib.new("ripemd160", hashlib.sha256(data).digest())
     return rh.digest()
 
 
 def var_int(x: int) -> bytes:
-    if x < 0xfd:
+    if x < 0xFD:
         return bytes([x])
-    if x < 0xffff:
-        return b'\xfd' + struct.pack('<H', x)
-    if x < 0xffff_ffff:
-        return b'\xfe' + struct.pack('<I', x)
-    return b'\xff' + struct.pack('<Q', x)
+    if x < 0xFFFF:
+        return b"\xfd" + struct.pack("<H", x)
+    if x < 0xFFFF_FFFF:
+        return b"\xfe" + struct.pack("<I", x)
+    return b"\xff" + struct.pack("<Q", x)
 
 
 class FillEnum(object):
@@ -45,7 +45,14 @@ class FillEnum(object):
         Fabian Raab <fabian@raab.link>
     """
 
-    def __init__(self, values: Iterable, enum_cls: Type[enum.Enum] = enum.Enum, prefix: str = 'val', *args, **kwargs):
+    def __init__(
+        self,
+        values: Iterable,
+        enum_cls: Type[enum.Enum] = enum.Enum,
+        prefix: str = "val",
+        *args,
+        **kwargs,
+    ):
         self.values = values
         self.enum_cls = enum_cls
         self.prefix = prefix
@@ -59,7 +66,7 @@ class FillEnum(object):
         # Copy members of passed class `cls`
         attributes = inspect.getmembers(cls)
         for attr in attributes:
-            if attr[0].startswith('__') and attr[0].endswith('__'):
+            if attr[0].startswith("__") and attr[0].endswith("__"):
                 continue
             cls_values.add(attr[1])
             members.append(attr)
@@ -72,12 +79,7 @@ class FillEnum(object):
             members.append((self.prefix + str(value), value))
             any_member = self.prefix + str(value)
 
-        new_enum_cls = self.enum_cls(
-            cls.__name__,
-            members,
-            *self.args,
-            **self.kwargs
-        )
+        new_enum_cls = self.enum_cls(cls.__name__, members, *self.args, **self.kwargs)
 
         # copy docstring
         getattr(new_enum_cls, any_member).__class__.__doc__ = cls.__doc__
@@ -85,4 +87,4 @@ class FillEnum(object):
         return new_enum_cls
 
 
-__all__ = ['hash160', 'hash256', 'var_int', 'FillEnum']
+__all__ = ["hash160", "hash256", "var_int", "FillEnum"]
