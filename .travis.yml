@@ -1,11 +1,13 @@
 language: python
 python:
     - "3.7"
-install: pip install coverage coveralls flake8 mccabe mypy pylint pytest
+install:
+    - pip install coverage coveralls flake8 mccabe mypy pylint pytest flit
+    - flit install
 script:
-#    - flake8 podsearch
-#    - pylint podsearch
-#    - mypy podsearch
+#    - flake8 libqtum
+#    - pylint libqtum
+#    - mypy libqtum
     - coverage erase
-    - coverage run --include=podsearch/* -m pytest -ra
+    - coverage run --include=libqtum/* -m pytest -ra
     - coveralls
