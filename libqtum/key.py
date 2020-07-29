@@ -26,37 +26,41 @@ class Key:
         self.compressed = compressed
 
     def __eq__(self, other):
-        return (other and
-                self.network == other.network and
-                isinstance(other, self.__class__))
+        return (
+            other
+            and self.network == other.network
+            and isinstance(other, self.__class__)
+        )
 
     def __ne__(self, other):
         return not self == other
 
 
 class PrivateKey(Key):
-    def __init__(self, secret_exponent: int, network: Type[Network] = QtumTestNet, **kwargs):
+    def __init__(
+        self, secret_exponent: int, network: Type[Network] = QtumTestNet, **kwargs
+    ):
         if not isinstance(secret_exponent, int):
             raise ValueError("secret_exponent must be an int")
         super().__init__(network, **kwargs)
         self._private_key = SigningKey.from_secret_exponent(
-            secret_exponent,
-            curve=SECP256k1,
-            hashfunc=hashlib.sha256
+            secret_exponent, curve=SECP256k1, hashfunc=hashlib.sha256
         )
 
     def get_key(self) -> bytes:
         """Get the key - a hex formatted private exponent for the curve."""
         return cast(bytes, self.ecdsa_key.to_string())
 
-    def _get_public_key(self) -> 'PublicKey':
+    def _get_public_key(self) -> "PublicKey":
         """Get the PublicKey for this PrivateKey."""
         return PublicKey.from_verifying_key(
             self.ecdsa_key.get_verifying_key(),
-            network=self.network, compressed=self.compressed)
+            network=self.network,
+            compressed=self.compressed,
+        )
 
     @property
-    def public_key(self) -> 'PublicKey':
+    def public_key(self) -> "PublicKey":
         return cast(PublicKey, self._get_public_key())
 
     @property
@@ -68,7 +72,7 @@ class PrivateKey(Key):
         Extended keys contain the network bytes and the public or private
         key.
         """
-        network_hex_chars = self.network.SECRET_KEY.to_bytes(1, 'big')
+        network_hex_chars = self.network.SECRET_KEY.to_bytes(1, "big")
         return network_hex_chars + self.get_key()
 
     def export_to_wif(self, compressed: Optional[bool] = None) -> str:
@@ -86,21 +90,22 @@ class PrivateKey(Key):
         if compressed is None:
             compressed = self.compressed
         if compressed:
-            extended_key += b'\01'
+            extended_key += b"\01"
         checksum = hash256(extended_key)
-        return base58.b58encode(extended_key + checksum[:4]).decode('utf-8')
+        return base58.b58encode(extended_key + checksum[:4]).decode("utf-8")
 
     @classmethod
-    def from_wif(cls, wif: str, network: Type[Network] = QtumTestNet) -> 'PrivateKey':
+    def from_wif(cls, wif: str, network: Type[Network] = QtumTestNet) -> "PrivateKey":
         wif_encoded = base58.b58decode(wif)
         key_full = wif_encoded
         network_byte = key_full[:1]
         key = key_full[1:-4]
-        if network_byte != network.SECRET_KEY.to_bytes(1, 'big'):
+        if network_byte != network.SECRET_KEY.to_bytes(1, "big"):
             raise incompatible_network_exception_factory(
                 network_name=network.NAME,
                 expected_prefix=network.SECRET_KEY,
-                given_prefix=int.from_bytes(network_byte, 'big'))
+                given_prefix=int.from_bytes(network_byte, "big"),
+            )
 
         checksum = hash256(network_byte + key)[:4]
         key_checksum = key_full[-4:]
@@ -112,14 +117,18 @@ class PrivateKey(Key):
             compressed = True
             key = key[:-1]
 
-        new_key = cls(int.from_bytes(key, 'big'), network=network, compressed=compressed)
+        new_key = cls(
+            int.from_bytes(key, "big"), network=network, compressed=compressed
+        )
         return new_key
 
     @classmethod
-    def from_hex_key(cls, key: Union[str, bytes], network: Type[Network] = QtumTestNet) -> 'PrivateKey':
+    def from_hex_key(
+        cls, key: Union[str, bytes], network: Type[Network] = QtumTestNet
+    ) -> "PrivateKey":
         if isinstance(key, bytes):
             if len(key) == 32:
-                return cls(int.from_bytes(key, 'big'), network)
+                return cls(int.from_bytes(key, "big"), network)
             if not all(chr(c) in string.hexdigits for c in key) or len(key) != 64:
                 raise ValueError("Invalid hex key")
             return cls(int(key, 16), network)
@@ -129,7 +138,9 @@ class PrivateKey(Key):
         return cls(int(key, 16), network)
 
     @classmethod
-    def from_master_password(cls, password: Union[bytes, str], network: Type[Network] = QtumTestNet):
+    def from_master_password(
+        cls, password: Union[bytes, str], network: Type[Network] = QtumTestNet
+    ):
         """Generate a new key from a master password.
         This password is hashed via a single round of sha256 and is highly
         breakable, but it's the standard brain wallet approach.
@@ -138,7 +149,7 @@ class PrivateKey(Key):
         table attack
         """
         if not isinstance(password, bytes):
-            password = password.encode('utf-8')
+            password = password.encode("utf-8")
         key = hashlib.sha256(password).hexdigest()
         return cls.from_hex_key(key, network)
 
@@ -147,19 +158,22 @@ class PrivateKey(Key):
 
     def sign_tx(self, tx_data: bytes, sighash_type: Union[int, SigHashType]):
         # Encode the hash type as a 4-byte hex value.
-        sighash = struct.pack('<I', sighash_type)
+        sighash = struct.pack("<I", sighash_type)
         payload = hashlib.sha256(tx_data + sighash).digest()
         signed = self.sign(payload)
-        return signed + struct.pack('B', sighash_type & 0xff)
+        return signed + struct.pack("B", sighash_type & 0xFF)
 
     def __eq__(self, other):
-        return (super(PrivateKey, self).__eq__(other) and
-                self.ecdsa_key.curve == other.ecdsa_key.curve and
-                (self.ecdsa_key.to_string() ==
-                 other.ecdsa_key.to_string()) and
-                (self.ecdsa_key.privkey.secret_multiplier ==
-                 other.ecdsa_key.privkey.secret_multiplier) and
-                self.public_key == other.public_key)
+        return (
+            super(PrivateKey, self).__eq__(other)
+            and self.ecdsa_key.curve == other.ecdsa_key.curve
+            and (self.ecdsa_key.to_string() == other.ecdsa_key.to_string())
+            and (
+                self.ecdsa_key.privkey.secret_multiplier
+                == other.ecdsa_key.privkey.secret_multiplier
+            )
+            and self.public_key == other.public_key
+        )
 
     def __sub__(self, other):
         assert isinstance(other, self.__class__)
@@ -173,7 +187,12 @@ class PrivateKey(Key):
 
 
 class PublicKey(Key):
-    def __init__(self, verifying_key: VerifyingKey, network: Type[Network] = QtumTestNet, **kwargs):
+    def __init__(
+        self,
+        verifying_key: VerifyingKey,
+        network: Type[Network] = QtumTestNet,
+        **kwargs
+    ):
         """Create a public key.
         :param verifying_key: The ECDSA VerifyingKey corresponding to this
             public key.
@@ -207,12 +226,16 @@ class PublicKey(Key):
             compressed = self.compressed
         if compressed:
             parity = 2 + (self.y & 1)  # 0x02 even, 0x03 odd
-            return bytes([parity]) + int(self.x).to_bytes(32, 'big')
+            return bytes([parity]) + int(self.x).to_bytes(32, "big")
 
-        return b'\x04' + int(self.x).to_bytes(32, 'big') + int(self.y).to_bytes(32, 'big')
+        return (
+            b"\x04" + int(self.x).to_bytes(32, "big") + int(self.y).to_bytes(32, "big")
+        )
 
     @classmethod
-    def from_hex_key(cls, key: Union[str, bytes], network: Type[Network] = QtumTestNet) -> 'PublicKey':
+    def from_hex_key(
+        cls, key: Union[str, bytes], network: Type[Network] = QtumTestNet
+    ) -> "PublicKey":
         """Load the PublicKey from a compressed or uncompressed hex key.
         This format is defined in PublicKey.get_key()
         """
@@ -235,15 +258,15 @@ class PublicKey(Key):
             if len(key) != 65:
                 raise KeyParseError("Invalid key length")
             public_pair = PublicPair(
-                int.from_bytes(key[1:33], 'big'),
-                int.from_bytes(key[33:], 'big'))
+                int.from_bytes(key[1:33], "big"), int.from_bytes(key[33:], "big")
+            )
         elif id_byte in [2, 3]:
             # Compressed public point!
             compressed = True
             if len(key) != 33:
                 raise KeyParseError("Invalid key length")
             y_odd = bool(id_byte & 0x01)  # 0 even, 1 odd
-            x = int.from_bytes(key[1:], 'big')
+            x = int.from_bytes(key[1:], "big")
             # The following x-to-pair algorithm was lifted from pycoin
             # I still need to sit down an understand it. It is also described
             # in http://www.secg.org/collateral/sec1_final.pdf
@@ -269,8 +292,7 @@ class PublicKey(Key):
         :param x: The x coordinate on the curve
         :param y: The y coordinate on the curve
         """
-        if (not isinstance(x, int) or
-                not isinstance(y, int)):
+        if not isinstance(x, int) or not isinstance(y, int):
             raise ValueError("The coordinates must be ints.")
         return _ECDSA_Point(SECP256k1.curve, x, y)
 
@@ -278,7 +300,7 @@ class PublicKey(Key):
         return self._verifying_key.pubkey.point
 
     @classmethod
-    def from_point(cls, point: _ECDSA_Point, **kwargs) -> 'PublicKey':
+    def from_point(cls, point: _ECDSA_Point, **kwargs) -> "PublicKey":
         """Create a PublicKey from a point on the SECP256k1 curve.
         :param point: A point on the SECP256k1 curve.
         :type point: SECP256k1.point
@@ -287,8 +309,7 @@ class PublicKey(Key):
         return cls.from_verifying_key(verifying_key, **kwargs)
 
     @classmethod
-    def from_verifying_key(
-            cls, verifying_key: VerifyingKey, **kwargs) -> 'PublicKey':
+    def from_verifying_key(cls, verifying_key: VerifyingKey, **kwargs) -> "PublicKey":
         return cls(verifying_key, **kwargs)
 
     def to_address(self, compressed: Optional[bool] = None) -> str:
@@ -303,24 +324,27 @@ class PublicKey(Key):
         # First get the hash160 of the key
         hash160_bytes = hash160(key)
         # Prepend the network address byte
-        network_hash160_bytes = \
-            self.network.PUBKEY_ADDRESS.to_bytes(1, 'big') + hash160_bytes
+        network_hash160_bytes = (
+            self.network.PUBKEY_ADDRESS.to_bytes(1, "big") + hash160_bytes
+        )
         # Return a base58 encoded address with a checksum
         checksum = hash256(network_hash160_bytes)
-        return base58.b58encode(network_hash160_bytes + checksum[:4]).decode('utf-8')
+        return base58.b58encode(network_hash160_bytes + checksum[:4]).decode("utf-8")
 
     def to_public_pair(self):
         return PublicPair(self.x, self.y)
 
     @classmethod
-    def from_public_pair(cls, pair: PublicPair, **kwargs) -> 'PublicKey':
+    def from_public_pair(cls, pair: PublicPair, **kwargs) -> "PublicKey":
         point = _ECDSA_Point(SECP256k1.curve, pair.x, pair.y)
         return cls.from_point(point, **kwargs)
 
     def __eq__(self, other):
-        return (super(PublicKey, self).__eq__(other) and
-                self.x == other.x and
-                self.y == other.y)
+        return (
+            super(PublicKey, self).__eq__(other)
+            and self.x == other.x
+            and self.y == other.y
+        )
 
     __hash__ = object.__hash__
 
@@ -330,13 +354,16 @@ class KeyParseError(Exception):
 
 
 def incompatible_network_exception_factory(
-        network_name: str, expected_prefix: int, given_prefix: int):
+    network_name: str, expected_prefix: int, given_prefix: int
+):
     return IncompatibleNetworkException(
         "Incorrect network. {net_name} expects a byte prefix of "
         "{expected_prefix}, but you supplied {given_prefix}".format(
             net_name=network_name,
             expected_prefix=expected_prefix,
-            given_prefix=given_prefix))
+            given_prefix=given_prefix,
+        )
+    )
 
 
 class ChecksumException(Exception):

@@ -15,8 +15,8 @@ def eth_abi_encode(abi: dict, args: list) -> bytes:
     """
     if not abi:
         return b"\x00"
-    types = [inp['type'] for inp in abi.get('inputs', [])]
-    if abi.get('name'):
+    types = [inp["type"] for inp in abi.get("inputs", [])]
+    if abi.get("name"):
         result = function_abi_to_4byte_selector(abi) + encode_abi(types, args)
     else:
         result = encode_abi(types, args)
@@ -24,10 +24,12 @@ def eth_abi_encode(abi: dict, args: list) -> bytes:
 
 
 def eth_output_decode(abi, result):
-    types = list([x['type'] for x in abi.get('outputs', [])])
+    types = list([x["type"] for x in abi.get("outputs", [])])
     try:
         if isinstance(result, dict):
-            output = decode_abi(types, bytes.fromhex(result['executionResult']['output']))
+            output = decode_abi(
+                types, bytes.fromhex(result["executionResult"]["output"])
+            )
         else:
             output = decode_abi(types, bytes.fromhex(result))
     except:

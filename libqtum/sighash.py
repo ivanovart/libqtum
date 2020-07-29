@@ -4,9 +4,10 @@ from typing import TypeVar
 
 class SigHash(IntFlag):
     """Sighash constants"""
+
     @property
     def sig_mod(self):
-        return self & 0x1f
+        return self & 0x1F
 
     ALL = 0x01
     NONE = 0x02
@@ -14,5 +15,5 @@ class SigHash(IntFlag):
     ANYONECANPAY = 0x80
 
 
-SigHashType = TypeVar('SigHashType', bound=SigHash)
-__all__ = ['SigHashType', 'SigHash']
+SigHashType = TypeVar("SigHashType", bound=SigHash)
+__all__ = ["SigHashType", "SigHash"]

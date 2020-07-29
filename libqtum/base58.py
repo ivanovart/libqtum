@@ -1,28 +1,30 @@
 from functools import wraps
 from typing import Callable, TypeVar, Union
 
-__b58chars = b'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+__b58chars = b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 __b58base = len(__b58chars)
 
 bytes_types = (bytes, bytearray)  # Types acceptable as binary data
 BytesTypes = Union[bytes, bytearray]
 ConvertableBytesTypes = Union[str, bytes, bytearray, memoryview]
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def _bytes_from_decode_data(s: ConvertableBytesTypes) -> BytesTypes:
     if isinstance(s, str):
         try:
-            return s.encode('ascii')
+            return s.encode("ascii")
         except UnicodeEncodeError:
-            raise ValueError('string argument should contain only ASCII characters')
+            raise ValueError("string argument should contain only ASCII characters")
     if isinstance(s, bytes_types):
         return s
     try:
         return memoryview(s).tobytes()
     except TypeError:
-        raise TypeError("argument should be a bytes-like object or ASCII "
-                        "string, not %r" % s.__class__.__name__) from None
+        raise TypeError(
+            "argument should be a bytes-like object or ASCII "
+            "string, not %r" % s.__class__.__name__
+        ) from None
 
 
 def arg_to_bytes(f: Callable[[BytesTypes], T]) -> Callable[[ConvertableBytesTypes], T]:
@@ -40,7 +42,7 @@ def b58encode_int(i: int) -> bytes:
     string = b""
     while i:
         i, idx = divmod(i, __b58base)
-        string = __b58chars[idx:idx+1] + string
+        string = __b58chars[idx : idx + 1] + string
     return string
 
 
@@ -63,7 +65,7 @@ def b58encode(v: BytesTypes) -> bytes:
     Encode a string using Base58
     """
     n_pad = len(v)
-    v = v.lstrip(b'\0')
+    v = v.lstrip(b"\0")
     n_pad -= len(v)
 
     p, acc = 1, 0
@@ -92,4 +94,4 @@ def b58decode(v: BytesTypes) -> bytes:
         acc, mod = divmod(acc, 256)
         result.append(mod)
 
-    return b'\0' * n_pad + bytes(reversed(result))
+    return b"\0" * n_pad + bytes(reversed(result))
