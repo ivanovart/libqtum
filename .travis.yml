@@ -4,10 +4,17 @@ python:
 install:
     - pip install coverage coveralls flake8 mccabe mypy pylint pytest flit
     - flit install
+before_script:  # code coverage tool
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
 script:
 #    - flake8 libqtum
 #    - pylint libqtum
 #    - mypy libqtum
     - coverage erase
     - coverage run --include=libqtum/* -m pytest -ra
+after_script:
     - coveralls
+    - coverage xml
+    - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
