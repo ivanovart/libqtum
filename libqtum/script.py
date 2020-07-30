@@ -117,9 +117,9 @@ class Script(bytes):
                     )
                     i += 4
                 else:
-                    assert False  # shouldn't happen
+                    raise ValueError()  # shouldn't happen
 
-                data = bytes(self[i : i + data_size])
+                data = bytes(self[i: i + data_size])
 
                 # Check for truncation
                 if len(data) < data_size:
@@ -199,7 +199,8 @@ class Script(bytes):
 
     @staticmethod
     def num(n: int):
-        assert -0x7FFF_FFFF <= n <= 0x7FFF_FFFF
+        if not -0x7FFF_FFFF <= n <= 0x7FFF_FFFF:
+            raise ValueError("n should be in range: -0x7FFF_FFFF <= n <= 0x7FFF_FFFF")
         if n == 0:
             return b"\x00"
 
@@ -218,7 +219,8 @@ class Script(bytes):
 
     @classmethod
     def p2pkh(cls, address: bytes):
-        assert len(address) == 20
+        if len(address) != 20:
+            raise ValueError("address len should be 20")
         return cls(
             [
                 OpCode.OP_DUP,

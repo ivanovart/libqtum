@@ -12,8 +12,8 @@ from ecdsa.util import sigencode_der_canonize
 
 from . import base58
 from .network import Network, QtumTestNet
-from .utils import hash160, hash256
 from .sighash import SigHashType
+from .utils import hash160, hash256
 
 PublicPair = namedtuple("PublicPair", ["x", "y"])
 
@@ -176,8 +176,10 @@ class PrivateKey(Key):
         )
 
     def __sub__(self, other):
-        assert isinstance(other, self.__class__)
-        assert self.network == other.network
+        if not isinstance(other, self.__class__):
+            raise ValueError(f"can't subtract {type(other)} from {self.__class__}")
+        if self.network == other.network:
+            raise ValueError("trying to subtract keys from different networks")
         k1 = self._private_key.privkey.secret_multiplier
         k2 = other._private_key.privkey.secret_multiplier
         result = (k1 - k2) % SECP256k1.order

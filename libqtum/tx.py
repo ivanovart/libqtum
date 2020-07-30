@@ -156,7 +156,8 @@ class Psbt:
 
     @version.setter
     def version(self, v: int):
-        assert 0 < v < 0xFFFF_FFFF
+        if not 0 < v < 0xFFFF_FFFF:
+            raise ValueError("version should be in range: 0 < v < 0xFFFF_FFFF")
         self._version = v
 
     @property
@@ -165,7 +166,8 @@ class Psbt:
 
     @lock_time.setter
     def lock_time(self, lt: int):
-        assert 0 < lt < 0xFFFF_FFFF
+        if not 0 < lt < 0xFFFF_FFFF:
+            raise ValueError("lock time should be in range: 0 < v < 0xFFFF_FFFF")
         self._lock_time = lt
 
     @property
@@ -245,7 +247,8 @@ class Psbt:
 
     @with_lock(PsbtLock.OUTPUT_LOCK)
     def add_output(self, out: TxOut) -> "Psbt":
-        assert out.value >= 0
+        if out.value < 0:
+            raise ValueError("out.value should be >= 0")
         self._outputs.append(out)
         return self
 
@@ -277,7 +280,8 @@ class Psbt:
         https://github.com/qtumproject/qtum/blob/342d769cf60ccfc46c0669507dcd154988d87d4f/test/functional/test_framework/script.py#L620
         @TODO: Op_CODESEPARATOR
         """
-        assert i < self.inputs_num
+        if i >= self.inputs_num:
+            raise ValueError("i out of range")
         v_in = self._inputs[i]
         sighash_type = v_in.sighash_type or SigHash.ALL
         if sighash_type.sig_mod not in sighash_types and (
@@ -356,8 +360,10 @@ class Psbt:
         return self
 
     def sign_output(self, key: PrivateKey, sighash_type: SigHashType, i: int):
-        assert sighash_type.sig_mod != SigHash.NONE
-        assert i < self.outputs_num
+        if sighash_type.sig_mod == SigHash.NONE:
+            raise ValueError("SigHash should be specified")
+        if i >= self.outputs_num:
+            raise ValueError("i out of range")
         v_out = self._outputs[i]
         if v_out.signed:
             return
@@ -367,7 +373,8 @@ class Psbt:
         script_ops = list(v_out.redeem_script)
         op_sender_index = script_ops.index(OpCode.OP_SENDER)
         if script_ops[op_sender_index - 3] == b"\x01":
-            assert script_ops[op_sender_index - 2] == sender_address
+            if script_ops[op_sender_index - 2] != sender_address:
+                raise ValueError("sender doesn't belong to this key")
         script_code = Script.p2pkh(sender_address)
 
         le_unsigned_int = struct.Struct("<I")
@@ -376,7 +383,8 @@ class Psbt:
         hash_sequence = bytes(32)
 
         if sighash_type & SigHash.ANYONECANPAY:
-            assert self.inputs_num > 0
+            if self.inputs_num == 0:
+                raise ValueError("no inputs")
             hash_inputs = hash256(self._inputs[0].utxo.prevout)
             hash_sequence = hash256(le_unsigned_int.pack(self._inputs[0].sequence))
         else:
@@ -422,7 +430,8 @@ class Psbt:
         return self
 
     def finalize_input(self, i: int) -> "Psbt":
-        assert i < self.inputs_num
+        if i >= self.inputs_num:
+            raise ValueError("i out of range")
         v_in = self._inputs[i]
         if v_in.utxo.is_p2pkh:
             sig = list(
