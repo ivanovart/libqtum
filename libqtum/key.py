@@ -1,5 +1,4 @@
 import hashlib
-import string
 import struct
 from collections import namedtuple
 from typing import Optional, Type, Union, cast
@@ -13,7 +12,7 @@ from ecdsa.util import sigencode_der_canonize
 from . import base58
 from .network import Network, QtumTestNet
 from .sighash import SigHashType
-from .utils import hash160, hash256
+from .utils import hash160, hash256, is_hex_string
 
 PublicPair = namedtuple("PublicPair", ["x", "y"])
 
@@ -134,14 +133,11 @@ class PrivateKey(Key):
         if isinstance(key, bytes):
             if len(key) == 32:
                 return cls(int.from_bytes(key, "big"), network)
-            if (
-                not all(chr(c) in string.hexdigits for c in key)
-                or len(key) != 64
-            ):
+            if not is_hex_string(key) or len(key) != 64:
                 raise ValueError("Invalid hex key")
             return cls(int(key, 16), network)
 
-        if not all(c in string.hexdigits for c in key) or len(key) != 64:
+        if not is_hex_string(key) or len(key) != 64:
             raise ValueError("Invalid hex key")
         return cls(int(key, 16), network)
 
@@ -258,11 +254,11 @@ class PublicKey(Key):
         if len(key) == 130 or len(key) == 66:
             # It might be a hexlified bytes / string
             if isinstance(key, bytes):
-                if not all(chr(c) in string.hexdigits for c in key):
+                if not is_hex_string(key):
                     raise ValueError("Invalid hex key")
                 key = bytes.fromhex(key.decode())
             else:
-                if not all(c in string.hexdigits for c in key):
+                if not is_hex_string(key):
                     raise ValueError("Invalid hex key")
                 key = bytes.fromhex(key)
         key = cast(bytes, key)

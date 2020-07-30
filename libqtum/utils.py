@@ -1,8 +1,9 @@
 import enum
 import hashlib
 import inspect
+import string
 import struct
-from typing import Iterable, Type
+from typing import Iterable, Type, Union
 
 
 def hash256(payload: bytes) -> bytes:
@@ -89,4 +90,10 @@ class FillEnum(object):
         return new_enum_cls
 
 
-__all__ = ["hash160", "hash256", "var_int", "FillEnum"]
+def is_hex_string(s: Union[str, bytes]) -> bool:
+    if isinstance(s, bytes):
+        return all(chr(c) in string.hexdigits for c in s)
+    return all(c in string.hexdigits for c in s)
+
+
+__all__ = ["hash160", "hash256", "var_int", "is_hex_string", "FillEnum"]
