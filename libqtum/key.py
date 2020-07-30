@@ -133,9 +133,6 @@ class PrivateKey(Key):
         if isinstance(key, bytes):
             if len(key) == 32:
                 return cls(int.from_bytes(key, "big"), network)
-            if not is_hex_string(key) or len(key) != 64:
-                raise ValueError("Invalid hex key")
-            return cls(int(key, 16), network)
 
         if not is_hex_string(key) or len(key) != 64:
             raise ValueError("Invalid hex key")
@@ -244,6 +241,45 @@ class PublicKey(Key):
             + int(self.y).to_bytes(32, "big")
         )
 
+    @staticmethod
+    def _get_public_pair_from_uncompressed(key: bytes) -> PublicPair:
+        # Uncompressed public point
+        # 1B ID + 32B x coord + 32B y coord = 65 B
+        if len(key) != 65:
+            raise KeyParseError("Invalid key length")
+        public_pair = PublicPair(
+            int.from_bytes(key[1:33], "big"), int.from_bytes(key[33:], "big"),
+        )
+        return public_pair
+
+    @staticmethod
+    def _get_public_pair_from_compressed(
+        key: bytes, id_byte: int
+    ) -> PublicPair:
+        # Compressed public point!
+        compressed = True
+        if len(key) != 33:
+            raise KeyParseError("Invalid key length")
+        y_odd = bool(id_byte & 0x01)  # 0 even, 1 odd
+        x = int.from_bytes(key[1:], "big")
+        # The following x-to-pair algorithm was lifted from pycoin
+        # I still need to sit down an understand it. It is also described
+        # in http://www.secg.org/collateral/sec1_final.pdf
+        curve = SECP256k1.curve
+        p = curve.p()
+        # For SECP256k1, curve.a() is 0 and curve.b() is 7, so this is
+        # effectively (x ** 3 + 7) % p, but the full equation is kept
+        # for just-in-case-the-curve-is-broken future-proofing
+        alpha = (pow(x, 3, p) + curve.a() * x + curve.b()) % p
+        beta = square_root_mod_prime(alpha, p)
+        y_even = not y_odd
+        if y_even == bool(beta & 1):
+            public_pair = PublicPair(x, p - beta)
+        else:
+            public_pair = PublicPair(x, beta)
+
+        return public_pair
+
     @classmethod
     def from_hex_key(
         cls, key: Union[str, bytes], network: Type[Network] = QtumTestNet
@@ -253,50 +289,25 @@ class PublicKey(Key):
         """
         if len(key) == 130 or len(key) == 66:
             # It might be a hexlified bytes / string
+            if not is_hex_string(key):
+                raise ValueError("Invalid hex key")
+
             if isinstance(key, bytes):
-                if not is_hex_string(key):
-                    raise ValueError("Invalid hex key")
                 key = bytes.fromhex(key.decode())
             else:
-                if not is_hex_string(key):
-                    raise ValueError("Invalid hex key")
                 key = bytes.fromhex(key)
+
         key = cast(bytes, key)
         compressed = False
         id_byte = key[0]
         if id_byte == 4:
-            # Uncompressed public point
-            # 1B ID + 32B x coord + 32B y coord = 65 B
-            if len(key) != 65:
-                raise KeyParseError("Invalid key length")
-            public_pair = PublicPair(
-                int.from_bytes(key[1:33], "big"),
-                int.from_bytes(key[33:], "big"),
-            )
+            public_pair = cls._get_public_pair_from_uncompressed(key)
         elif id_byte in [2, 3]:
-            # Compressed public point!
             compressed = True
-            if len(key) != 33:
-                raise KeyParseError("Invalid key length")
-            y_odd = bool(id_byte & 0x01)  # 0 even, 1 odd
-            x = int.from_bytes(key[1:], "big")
-            # The following x-to-pair algorithm was lifted from pycoin
-            # I still need to sit down an understand it. It is also described
-            # in http://www.secg.org/collateral/sec1_final.pdf
-            curve = SECP256k1.curve
-            p = curve.p()
-            # For SECP256k1, curve.a() is 0 and curve.b() is 7, so this is
-            # effectively (x ** 3 + 7) % p, but the full equation is kept
-            # for just-in-case-the-curve-is-broken future-proofing
-            alpha = (pow(x, 3, p) + curve.a() * x + curve.b()) % p
-            beta = square_root_mod_prime(alpha, p)
-            y_even = not y_odd
-            if y_even == bool(beta & 1):
-                public_pair = PublicPair(x, p - beta)
-            else:
-                public_pair = PublicPair(x, beta)
+            public_pair = cls._get_public_pair_from_compressed(key, id_byte)
         else:
             raise KeyParseError("The given key is not in a known format.")
+
         return cls.from_public_pair(
             public_pair, network=network, compressed=compressed
         )
