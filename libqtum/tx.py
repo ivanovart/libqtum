@@ -69,7 +69,9 @@ class UTXO(TxOut):
 
     @property
     def prevout(self) -> bytes:
-        return self.le_bin_transaction_id + struct.pack("<I", self.output_index)
+        return self.le_bin_transaction_id + struct.pack(
+            "<I", self.output_index
+        )
 
     def __eq__(self, other: "UTXO"):
         return (
@@ -167,7 +169,9 @@ class Psbt:
     @lock_time.setter
     def lock_time(self, lt: int):
         if not 0 < lt < 0xFFFF_FFFF:
-            raise ValueError("lock time should be in range: 0 < v < 0xFFFF_FFFF")
+            raise ValueError(
+                "lock time should be in range: 0 < v < 0xFFFF_FFFF"
+            )
         self._lock_time = lt
 
     @property
@@ -185,7 +189,9 @@ class Psbt:
     @property
     def estimated_size(self) -> int:
         # version(4) + inputs_num(1 - 9) + outputs_num(1 - 9) + lock_time(4)
-        size = 8 + len(var_int(self.inputs_num)) + len(var_int(self.outputs_num))
+        size = (
+            8 + len(var_int(self.inputs_num)) + len(var_int(self.outputs_num))
+        )
         # UTXO ref (36) + seq(4)
         per_in = 40
         # value(8)
@@ -225,9 +231,9 @@ class Psbt:
             call_index = ops.index(OpCode.OP_CALL)
             if call_index < 5:
                 continue
-            gas_out += int.from_bytes(ops[call_index - 4], "little") * int.from_bytes(
-                ops[call_index - 3], "little"
-            )
+            gas_out += int.from_bytes(
+                ops[call_index - 4], "little"
+            ) * int.from_bytes(ops[call_index - 3], "little")
         return reg_out + gas_out
 
     @property
@@ -275,7 +281,9 @@ class Psbt:
         tx += le_unsigned_int.pack(self.lock_time)
         return tx
 
-    def sign_input(self, key: PrivateKey, sighash_types: List[SigHashType], i: int):
+    def sign_input(
+        self, key: PrivateKey, sighash_types: List[SigHashType], i: int
+    ):
         """
         https://github.com/qtumproject/qtum/blob/342d769cf60ccfc46c0669507dcd154988d87d4f/test/functional/test_framework/script.py#L620
         @TODO: Op_CODESEPARATOR
@@ -354,7 +362,9 @@ class Psbt:
         if sighash_type.sig_mod != SigHash.NONE:
             self._lock |= PsbtLock.OUTPUT_LOCK | PsbtLock.INPUT_SEQ_LOCK
 
-    def sign_inputs(self, key: PrivateKey, sighash_types: List[SigHashType]) -> "Psbt":
+    def sign_inputs(
+        self, key: PrivateKey, sighash_types: List[SigHashType]
+    ) -> "Psbt":
         for i in range(self.inputs_num):
             self.sign_input(key, sighash_types, i)
         return self
@@ -386,7 +396,9 @@ class Psbt:
             if self.inputs_num == 0:
                 raise ValueError("no inputs")
             hash_inputs = hash256(self._inputs[0].utxo.prevout)
-            hash_sequence = hash256(le_unsigned_int.pack(self._inputs[0].sequence))
+            hash_sequence = hash256(
+                le_unsigned_int.pack(self._inputs[0].sequence)
+            )
         else:
             inputs = bytes()
             for inp in self._inputs:
@@ -400,7 +412,11 @@ class Psbt:
                 hash_sequence = hash256(serialize_sequence)
 
         serialize_outputs = bytes()
-        for out in self._outputs if sighash_type.sig_mod != SigHash.SINGLE else [v_out]:
+        for out in (
+            self._outputs
+            if sighash_type.sig_mod != SigHash.SINGLE
+            else [v_out]
+        ):
             serialize_outputs += out.without_signature().serialize()
         hash_outputs = hash256(serialize_outputs)
 
@@ -416,7 +432,9 @@ class Psbt:
 
         sig = key.sign_tx(ss, sighash_type)
         script_sig = Script([sig, pub_key])
-        script_ops[op_sender_index - 1] = Script(var_int(len(script_sig)) + script_sig)
+        script_ops[op_sender_index - 1] = Script(
+            var_int(len(script_sig)) + script_sig
+        )
         v_out.redeem_script = Script(script_ops)
         # locks
         if not sighash_type & SigHash.ANYONECANPAY:
@@ -424,7 +442,9 @@ class Psbt:
         if sighash_type.sig_mod != SigHash.SINGLE:
             self._lock |= PsbtLock.OUTPUT_LOCK | PsbtLock.INPUT_SEQ_LOCK
 
-    def sign_outputs(self, key: PrivateKey, sighash_type: SigHashType) -> "Psbt":
+    def sign_outputs(
+        self, key: PrivateKey, sighash_type: SigHashType
+    ) -> "Psbt":
         for i in range(self.outputs_num):
             self.sign_output(key, sighash_type, i)
         return self

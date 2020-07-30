@@ -79,7 +79,9 @@ class FillEnum(object):
             members.append((self.prefix + str(value), value))
             any_member = self.prefix + str(value)
 
-        new_enum_cls = self.enum_cls(cls.__name__, members, *self.args, **self.kwargs)
+        new_enum_cls = self.enum_cls(
+            cls.__name__, members, *self.args, **self.kwargs
+        )
 
         # copy docstring
         getattr(new_enum_cls, any_member).__class__.__doc__ = cls.__doc__

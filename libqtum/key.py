@@ -38,7 +38,10 @@ class Key:
 
 class PrivateKey(Key):
     def __init__(
-        self, secret_exponent: int, network: Type[Network] = QtumTestNet, **kwargs
+        self,
+        secret_exponent: int,
+        network: Type[Network] = QtumTestNet,
+        **kwargs,
     ):
         if not isinstance(secret_exponent, int):
             raise ValueError("secret_exponent must be an int")
@@ -95,7 +98,9 @@ class PrivateKey(Key):
         return base58.b58encode(extended_key + checksum[:4]).decode("utf-8")
 
     @classmethod
-    def from_wif(cls, wif: str, network: Type[Network] = QtumTestNet) -> "PrivateKey":
+    def from_wif(
+        cls, wif: str, network: Type[Network] = QtumTestNet
+    ) -> "PrivateKey":
         wif_encoded = base58.b58decode(wif)
         key_full = wif_encoded
         network_byte = key_full[:1]
@@ -129,7 +134,10 @@ class PrivateKey(Key):
         if isinstance(key, bytes):
             if len(key) == 32:
                 return cls(int.from_bytes(key, "big"), network)
-            if not all(chr(c) in string.hexdigits for c in key) or len(key) != 64:
+            if (
+                not all(chr(c) in string.hexdigits for c in key)
+                or len(key) != 64
+            ):
                 raise ValueError("Invalid hex key")
             return cls(int(key, 16), network)
 
@@ -154,7 +162,9 @@ class PrivateKey(Key):
         return cls.from_hex_key(key, network)
 
     def sign(self, data: bytes) -> bytes:
-        return self.ecdsa_key.sign_deterministic(data, sigencode=sigencode_der_canonize)
+        return self.ecdsa_key.sign_deterministic(
+            data, sigencode=sigencode_der_canonize
+        )
 
     def sign_tx(self, tx_data: bytes, sighash_type: Union[int, SigHashType]):
         # Encode the hash type as a 4-byte hex value.
@@ -177,7 +187,9 @@ class PrivateKey(Key):
 
     def __sub__(self, other):
         if not isinstance(other, self.__class__):
-            raise ValueError(f"can't subtract {type(other)} from {self.__class__}")
+            raise ValueError(
+                f"can't subtract {type(other)} from {self.__class__}"
+            )
         if self.network == other.network:
             raise ValueError("trying to subtract keys from different networks")
         k1 = self._private_key.privkey.secret_multiplier
@@ -193,7 +205,7 @@ class PublicKey(Key):
         self,
         verifying_key: VerifyingKey,
         network: Type[Network] = QtumTestNet,
-        **kwargs
+        **kwargs,
     ):
         """Create a public key.
         :param verifying_key: The ECDSA VerifyingKey corresponding to this
@@ -231,7 +243,9 @@ class PublicKey(Key):
             return bytes([parity]) + int(self.x).to_bytes(32, "big")
 
         return (
-            b"\x04" + int(self.x).to_bytes(32, "big") + int(self.y).to_bytes(32, "big")
+            b"\x04"
+            + int(self.x).to_bytes(32, "big")
+            + int(self.y).to_bytes(32, "big")
         )
 
     @classmethod
@@ -260,7 +274,8 @@ class PublicKey(Key):
             if len(key) != 65:
                 raise KeyParseError("Invalid key length")
             public_pair = PublicPair(
-                int.from_bytes(key[1:33], "big"), int.from_bytes(key[33:], "big")
+                int.from_bytes(key[1:33], "big"),
+                int.from_bytes(key[33:], "big"),
             )
         elif id_byte in [2, 3]:
             # Compressed public point!
@@ -286,7 +301,9 @@ class PublicKey(Key):
                 public_pair = PublicPair(x, beta)
         else:
             raise KeyParseError("The given key is not in a known format.")
-        return cls.from_public_pair(public_pair, network=network, compressed=compressed)
+        return cls.from_public_pair(
+            public_pair, network=network, compressed=compressed
+        )
 
     @staticmethod
     def create_point(x: int, y: int) -> _ECDSA_Point:
@@ -311,7 +328,9 @@ class PublicKey(Key):
         return cls.from_verifying_key(verifying_key, **kwargs)
 
     @classmethod
-    def from_verifying_key(cls, verifying_key: VerifyingKey, **kwargs) -> "PublicKey":
+    def from_verifying_key(
+        cls, verifying_key: VerifyingKey, **kwargs
+    ) -> "PublicKey":
         return cls(verifying_key, **kwargs)
 
     def to_address(self, compressed: Optional[bool] = None) -> str:
@@ -331,7 +350,9 @@ class PublicKey(Key):
         )
         # Return a base58 encoded address with a checksum
         checksum = hash256(network_hash160_bytes)
-        return base58.b58encode(network_hash160_bytes + checksum[:4]).decode("utf-8")
+        return base58.b58encode(network_hash160_bytes + checksum[:4]).decode(
+            "utf-8"
+        )
 
     def to_public_pair(self):
         return PublicPair(self.x, self.y)
