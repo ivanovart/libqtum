@@ -65,15 +65,10 @@ class Script(bytes):
         if isinstance(value, bytes) or isinstance(value, bytearray):
             return super(Script, cls).__new__(cls, value)
         else:
-
-            def coerce_iterable(iterable):
-                for instance in iterable:
-                    yield cls.__coerce_instance(instance)
-
             # Annoyingly on both python2 and python3 bytes.join() always
             # returns a bytes instance even when subclassed.
             return super(Script, cls).__new__(
-                cls, b"".join(coerce_iterable(value))
+                cls, b"".join(map(cls.__coerce_instance, value))
             )
 
     def raw_iter(self):
