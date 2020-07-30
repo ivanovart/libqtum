@@ -15,7 +15,9 @@ def _bytes_from_decode_data(s: ConvertableBytesTypes) -> BytesTypes:
         try:
             return s.encode("ascii")
         except UnicodeEncodeError:
-            raise ValueError("string argument should contain only ASCII characters")
+            raise ValueError(
+                "string argument should contain only ASCII characters"
+            )
     if isinstance(s, bytes_types):
         return s
     try:
@@ -27,7 +29,9 @@ def _bytes_from_decode_data(s: ConvertableBytesTypes) -> BytesTypes:
         ) from None
 
 
-def arg_to_bytes(f: Callable[[BytesTypes], T]) -> Callable[[ConvertableBytesTypes], T]:
+def arg_to_bytes(
+    f: Callable[[BytesTypes], T]
+) -> Callable[[ConvertableBytesTypes], T]:
     @wraps(f)
     def decorator(arg):
         return f(_bytes_from_decode_data(arg))

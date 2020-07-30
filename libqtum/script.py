@@ -53,7 +53,9 @@ class Script(bytes):
             # bytes.__add__ always returns bytes instances unfortunately
             return Script(super(Script, self).__add__(other))
         except TypeError:
-            raise TypeError("Can not add a %r instance to a Script" % other.__class__)
+            raise TypeError(
+                "Can not add a %r instance to a Script" % other.__class__
+            )
 
     def join(self, iterable):
         # join makes no sense for a Script()
@@ -70,7 +72,9 @@ class Script(bytes):
 
             # Annoyingly on both python2 and python3 bytes.join() always
             # returns a bytes instance even when subclassed.
-            return super(Script, cls).__new__(cls, b"".join(coerce_iterable(value)))
+            return super(Script, cls).__new__(
+                cls, b"".join(coerce_iterable(value))
+            )
 
     def raw_iter(self):
         """Raw iteration
@@ -94,21 +98,27 @@ class Script(bytes):
                 elif opcode == OpCode.OP_PUSHDATA1:
                     pushdata_type = "PUSHDATA1"
                     if i >= len(self):
-                        raise ScriptInvalidError("PUSHDATA1: missing data length")
+                        raise ScriptInvalidError(
+                            "PUSHDATA1: missing data length"
+                        )
                     data_size = self[i]
                     i += 1
 
                 elif opcode == OpCode.OP_PUSHDATA2:
                     pushdata_type = "PUSHDATA2"
                     if i + 1 >= len(self):
-                        raise ScriptInvalidError("PUSHDATA2: missing data length")
+                        raise ScriptInvalidError(
+                            "PUSHDATA2: missing data length"
+                        )
                     data_size = self[i] + (self[i + 1] << 8)
                     i += 2
 
                 elif opcode == OpCode.OP_PUSHDATA4:
                     pushdata_type = "PUSHDATA4"
                     if i + 3 >= len(self):
-                        raise ScriptInvalidError("PUSHDATA4: missing data length")
+                        raise ScriptInvalidError(
+                            "PUSHDATA4: missing data length"
+                        )
                     data_size = (
                         self[i]
                         + (self[i + 1] << 8)
@@ -117,7 +127,7 @@ class Script(bytes):
                     )
                     i += 4
                 else:
-                    assert False  # shouldn't happen
+                    raise ValueError()  # shouldn't happen
 
                 data = bytes(self[i : i + data_size])
 
@@ -186,7 +196,10 @@ class Script(bytes):
         for (opcode, data, sop_idx) in self.raw_iter():
             if opcode in (OpCode.OP_CHECKSIG, OpCode.OP_CHECKSIGVERIFY):
                 n += 1
-            elif opcode in (OpCode.OP_CHECKMULTISIG, OpCode.OP_CHECKMULTISIGVERIFY):
+            elif opcode in (
+                OpCode.OP_CHECKMULTISIG,
+                OpCode.OP_CHECKMULTISIGVERIFY,
+            ):
                 if f_accurate and (OpCode.OP_1 <= last_opcode <= OpCode.OP_16):
                     n += opcode.decode_op_n()
                 else:
@@ -199,7 +212,10 @@ class Script(bytes):
 
     @staticmethod
     def num(n: int):
-        assert -0x7FFF_FFFF <= n <= 0x7FFF_FFFF
+        if not -0x7FFF_FFFF <= n <= 0x7FFF_FFFF:
+            raise ValueError(
+                "n should be in range: -0x7FFF_FFFF <= n <= 0x7FFF_FFFF"
+            )
         if n == 0:
             return b"\x00"
 
@@ -218,7 +234,8 @@ class Script(bytes):
 
     @classmethod
     def p2pkh(cls, address: bytes):
-        assert len(address) == 20
+        if len(address) != 20:
+            raise ValueError("address len should be 20")
         return cls(
             [
                 OpCode.OP_DUP,

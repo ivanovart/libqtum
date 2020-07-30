@@ -26,7 +26,9 @@ class OpCodeBase(int, Enum):
     def encode_op_n(cls, n):
         """Encode a small integer op, returning an opcode"""
         if not (0 <= n <= 16):
-            raise ValueError("Integer must be in range 0 <= n <= 16, got %d" % n)
+            raise ValueError(
+                "Integer must be in range 0 <= n <= 16, got %d" % n
+            )
 
         return cls(n)
 
@@ -45,7 +47,9 @@ class OpCodeBase(int, Enum):
         return 0x51 <= self <= 0x60 or self == 0
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}.{self._name_}: {hex(self._value_)}>"
+        return (
+            f"<{self.__class__.__name__}.{self._name_}: {hex(self._value_)}>"
+        )
 
 
 @FillEnum(range(1, 0x4C), OpCodeBase, prefix="OP_PUSHN_", module=__name__)
