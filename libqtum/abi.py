@@ -9,7 +9,7 @@ def eth_abi_encode(abi: dict, args: list) -> bytes:
     >> abi = {"constant":True,"inputs":[{"name":"","type":"address"}],
 "name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"payable":False,"stateMutability":"view","type":"function"}
     >> eth_abi_encode(abi, ['9d3d4cc1986d81f9109f2b091b7732e7d9bcf63b'])
-    >> '70a082310000000000000000000000009d3d4cc1986d81f9109f2b091b7732e7d9bcf63b'
+    '70a082310000000000000000000000009d3d4cc1986d81f9109f2b091b7732e7d9bcf63b'
     ## address must be lower case
     Source: https://github.com/qtumproject/qtum-electrum/blob/241426fbb7e14be0eb129ab2841840d30285e369/electrum/bitcoin.py#L770
     """
