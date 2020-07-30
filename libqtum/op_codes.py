@@ -1,6 +1,6 @@
 from enum import Enum
 
-from .utils import FillEnum
+from fill_enum import FillEnum
 
 
 class OpCodeBase(int, Enum):
