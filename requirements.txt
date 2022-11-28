@@ -1,4 +1,4 @@
-pycryptodome==3.9.8
+pycryptodome==3.16.0
 ecdsa==0.15
 eth-utils==1.9.0
 eth_abi==2.1.1
